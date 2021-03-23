@@ -10,20 +10,20 @@
 
 int main (void){
 
-	int 		exitServer = FALSE;
+	int 		exitServer = 1;
 
 	key_t 		message_key;
 
-	int 		messageID = -1; // message ID
+	int 		messageID ; // message ID
 	int 		returnCode;	// return code from message processing
 	
 	int		x;
 	int 		msgPriority;
 	char		buffer[100];
-	msgCODES 	incomingMessage;
+	
 
 	//obtain the message key
-	message_key = ftok (".", 855);
+	message_key = ftok (".", 8555);
 	if (message_key == -1) 
 	{ 
 		printf ("(SERVER) Cannot allocate key\n");
@@ -61,13 +61,17 @@ int main (void){
 	 */
 	
 	printf("sleep before the main loop\n");
-	sleep(15);
-	while(! exitServer)
+	sleep(5);
+	printf("just  woke up");
+	while(1)
 	{
-	 	runServerMachine();
+		
+		printf("calling the func now\n");
+	 	runServerMachine(messageID);
 		printf("...breaking out of the loop...\n\n");
 		sleep(3);
-		break;
+		//logger("Updated in the master list");
+		//break;
 	  
 	}
 	printf ("(SERVER) Exiting ... removing msgQ and leaving ...\n");
