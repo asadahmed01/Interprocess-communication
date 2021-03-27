@@ -111,26 +111,26 @@ void runServerMachine(int messageID, MasterList* masterlist) {
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Operator Eroor)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
-/*			if(message.statusCode == FATAL_CODE)*/
-/*			{*/
-/*				*/
-/*				*/
-/*				for(int j = i; j < MAX_DC_ROLES; j++)*/
-/*				{*/
-/*					*/
-/*					masterlist->dc[j].dcProcessID = masterlist->dc[j+1].dcProcessID;*/
-/*					*/
-/*				}*/
-/*			*/
-/*				loopCounter--;*/
-/*				masterlist->numberOfDCs--;*/
-/*				if(masterlist->numberOfDCs == 0)*/
-/*				{*/
-/*					break;*/
-/*				}*/
-/*				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", loopCounter, message.processID);*/
-/*						logger(logMessage);*/
-/*			}*/
+			if(message.statusCode == FATAL_CODE)
+			{
+				
+				
+				for(int j = i; j < MAX_DC_ROLES; j++)
+				{
+					
+					masterlist->dc[j].dcProcessID = masterlist->dc[j+1].dcProcessID;
+					
+				}
+			
+				loopCounter--;
+				masterlist->numberOfDCs--;
+				if(masterlist->numberOfDCs == 0)
+				{
+					break;
+				}
+				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", loopCounter, message.processID);
+						logger(logMessage);
+			}
 			if((difftime(calculateTime(), masterlist->dc[i].lastTimeHeardFrom)) > TIME_LIMIT && getpgid(masterlist->dc[i].dcProcessID) != -1)
 			{
 				for(int j = i; j < MAX_DC_ROLES; j++)

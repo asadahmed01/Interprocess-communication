@@ -32,7 +32,6 @@ int main (void){
 
 	//obtain the message key
 	message_key = ftok (".", 8555);
-	printf("message key %d", message_key);
 	if (message_key == -1) 
 	{ 
 		printf ("(SERVER) Cannot allocate key\n");
