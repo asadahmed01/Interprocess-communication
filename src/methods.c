@@ -26,27 +26,24 @@ int loopCounter = 0;
 *			   also, this function is responsible for attaching the struct to the allocated shared memory
 *  Inputs	:	messageID, shmID
 *  Outputs	:	None
-*  Returns	:	None
+*  Returns	:	0 if the list is not empty or 1 if the list is empty
 */
-void runServerMachine(int messageID, MasterList* masterlist) {
+int runServerMachine(int messageID, MasterList* masterlist) {
 	int returnCode;
-	//char tmp[10];
 	int counter = 1;
-	//MasterList* masterlist ;
-	char logMessage[100] = "DC-";
+	char logMessage[BUFF_SIZE] = "DC-";
 	double limit = TIME_LIMIT;
 	double diff;
 	MSGCODES 	message; // new variable of type msgCODES STRUCT
 
 	//start receiving the messae here
 	returnCode = msgrcv(messageID, (void*)&message, sizeof(message), 80, 0);
+	//check for error code
 	if(returnCode == -1) 
 	{
 		printf("error occurred"); 
 		exit(1);
 	}
-	
-	
 	
 	int statusCode = message.statusCode;
 	
@@ -54,23 +51,24 @@ void runServerMachine(int messageID, MasterList* masterlist) {
 	printf("processID: %d\n", message.processID);
 	printf("status code: %d\n", message.statusCode);
 
-
+	//initialize the message queue ID of the masterlist
 	masterlist->msgQueueID = messageID;
 	
-	
-
+	//loop throught the master list
 	for(int i = 0; i< MAX_DC_ROLES; i++) {
 		
-		
+		//if the DC is new one
 		if(masterlist->dc[i].dcProcessID != message.processID)
 		{
 			
 				if(counter == MAX_DC_ROLES) {
+				//add the DC to the master list
 					masterlist->dc[loopCounter].dcProcessID = message.processID;
+					//keep track of the time it was added to the list
 					masterlist->dc[loopCounter].lastTimeHeardFrom = calculateTime();
 					loopCounter++;
 					masterlist->numberOfDCs++;
-					
+					//log the relevant message to the DR log monitor
 					snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] added to the masterList -NEW DC- status 0 (Everything is Okay)", loopCounter, message.processID);
 						logger(logMessage);
 					
@@ -80,71 +78,93 @@ void runServerMachine(int messageID, MasterList* masterlist) {
 				counter++;
 			
 		}
-		else if(masterlist->dc[i].dcProcessID == message.processID) {
+		//if the DC is not new and it is already in the list
+		if(masterlist->dc[i].dcProcessID == message.processID) {
+		//for the status code received from the client
+			if(message.statusCode == OFFLINE)
+			{
+				
+				//if code received is 6
+				for(int j = i; j < MAX_DC_ROLES; j++)
+				{
+					//remove the DC client from the master list and collapse the struct
+					masterlist->dc[j].dcProcessID = masterlist->dc[j+1].dcProcessID;
+					
+				}
+				//decrement the list
+				loopCounter--;
+				masterlist->numberOfDCs--;
+				//log to the log monitor when a DC client is removed from the list
+				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", loopCounter, message.processID);
+						logger(logMessage);
+				//if the list is empty, break out of the loop and return to the main loop and shutdown the server
+				if(masterlist->numberOfDCs == 0)
+				{
+					return 1;
+				}
+				
+			}
+			
 			if(message.statusCode == OKAY)
 					{
+					//if code received is 0, then update the list
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Everything is Okay)", loopCounter, message.processID, message.statusCode);
+						//and log to the log monitor
 						logger(logMessage);
 					}
+					//if the code received is 1, log the description to the log monitor
 					if(message.statusCode == HYDRAULIC_PRESSURE_FAIL)
 					{
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (HYDRAULIC PRESSURE FAIL)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
+					//if the code received is 2, log the code and its description to the log monitor
 					if(message.statusCode == SAFTEY_BTN_FAIL)
 					{
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Safety Button Fail)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
+					//if the code is 3, log the code and its description to the log monitor
 					if(message.statusCode == NO_RAW_MATERIAL_IN_PROCESS)
 					{
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (No Raw Material in-process)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
+					//if the code is 4, log the code and its description to the log monitor
 					if(message.statusCode == OPERATING_OUT_OF_RANG)
 					{
-						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Operation out of Rang)", loopCounter, message.processID, message.statusCode);
+						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Operating Temperature out of Range)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
+					//if the code is 5, log the code and its description to the log monitor
 					if(message.statusCode == OPERATOR_ERROR)
 					{
 						snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] updated the masterList -MSG RECEIVED- status %d (Operator Eroor)", loopCounter, message.processID, message.statusCode);
 						logger(logMessage);
 					}
-/*			if(message.statusCode == FATAL_CODE)*/
-/*			{*/
-/*				*/
-/*				*/
-/*				for(int j = i; j < MAX_DC_ROLES; j++)*/
-/*				{*/
-/*					*/
-/*					masterlist->dc[j].dcProcessID = masterlist->dc[j+1].dcProcessID;*/
-/*					*/
-/*				}*/
-/*			*/
-/*				loopCounter--;*/
-/*				masterlist->numberOfDCs--;*/
-/*				if(masterlist->numberOfDCs == 0)*/
-/*				{*/
-/*					break;*/
-/*				}*/
-/*				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", loopCounter, message.processID);*/
-/*						logger(logMessage);*/
-/*			}*/
-			if((difftime(calculateTime(), masterlist->dc[i].lastTimeHeardFrom)) > TIME_LIMIT && getpgid(masterlist->dc[i].dcProcessID) != -1)
+			//check the last time heard from the machine and if it is still running
+			if((difftime(calculateTime(), masterlist->dc[i].lastTimeHeardFrom)) > TIME_LIMIT )
 			{
+			//if the time is more than 35 seconds and the process is still there
 				for(int j = i; j < MAX_DC_ROLES; j++)
 				{
-					
+					//remove it from the list
 					masterlist->dc[j].dcProcessID = masterlist->dc[j+1].dcProcessID;
 					printf("removed %d\n", masterlist->dc[j].dcProcessID);
+					
 				
 				}
 			
 				loopCounter--;
 				masterlist->numberOfDCs--;
-				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", loopCounter, message.processID);
+				snprintf(logMessage, sizeof(logMessage), "DC-%02d [%d] has gone OFFLINE- removing from master-list)", i, message.processID);
 						logger(logMessage);
+				//if the list is empty, break out of the loop and return to the main loop and shutdown the server
+				if(masterlist->numberOfDCs == 0)
+				{
+					return 1;
+				}
+				
 			}
 			
 		//break; 
@@ -165,8 +185,8 @@ void runServerMachine(int messageID, MasterList* masterlist) {
 		
 	}
 
-	
 
+	return 0;
 }
 
 

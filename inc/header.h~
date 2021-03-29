@@ -52,7 +52,7 @@ typedef struct  {
 
 
 
-void runServerMachine(int messageID, int shmid);
+int runServerMachine(int messageID, MasterList* masterlist);
 void logger (char* message);
 int allocateSharedMemory();
 time_t calculateTime();

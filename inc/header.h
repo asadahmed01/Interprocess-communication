@@ -12,7 +12,7 @@
 #define FALSE 0
 
 #define M_TYPE	80
-
+#define BUFF_SIZE 1000
 #define SEND	1
 #define RECEIVE	2
 #define MAX_DC_ROLES 10
@@ -52,7 +52,7 @@ typedef struct  {
 
 
 
-void runServerMachine(int messageID, MasterList* masterlist);
+int runServerMachine(int messageID, MasterList* masterlist);
 void logger (char* message);
 int allocateSharedMemory();
 time_t calculateTime();
